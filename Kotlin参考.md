@@ -781,3 +781,383 @@ if (b == true) {
 }
 ```
 
+## 编码公约
+
+此页面包含Kotlin语言的当前编码风格。
+
+### 使用样式指南
+
+要根据这个样式指南配置IntelliJ formatter，请安装Kotlin plugin version 1.2.20或更新版本，转到 Settings | Editor | Code style | Kotlin，点击右上角的"Set from…"链接，从菜单中选择"Predefined style / Kotlin style guide"。
+
+要验证您的代码是否按照样式指南进行了格式化，请转到inspection setting，并启用“Kotlin | Style issues | File is not formatted according to project settings检查。默认情况下，将启用其它检查，以验证样式指南中描述的其他问题(如命名约定)。
+
+### 源代码组织
+
+#### 目录结构
+
+在混合语言项目中，Kotlin源文件应该与Java源文件驻留在同一个源根中，并且遵循相同的目录结构(每个文件应该存储在每个包语句对应的目录中)。
+
+在纯Kotlin项目中，推荐的目录结构是遵循包结构，省略公共根包(例如，如果项目中的所有代码都在"org.example.kotlin"包及其子包中，"org.example.kotlin"包的文件应该直接放在源根目录下，"org.example.kotlin.foo. bar"的文件应该放在源根的子目录"foo/bar"下。
+
+#### 源文件名
+
+如果Kotlin文件包含单个类(可能带有相关的顶级声明)，其名称应该与类的名称相同，并附加.kt扩展名。如果一个文件包含多个类，或者只包含顶级声明，那么选择一个描述该文件所包含内容的名称，并相应地命名该文件。使用驼峰命名法，首字母大写(例如ProcessDeclaration .kt)。
+
+文件的名称应该描述文件中的代码的功能。因此，您应该避免在文件名中使用"Util"等无意义的词。
+
+#### 源文件组织
+
+在同一个Kotlin源文件中放置多个声明(类、顶级函数或属性)是受鼓励的，只要这些声明在语义上紧密相关，且文件大小保持合理(不超过几百行)。
+
+特别是，当为与该类的所有客户端相关的类定义扩展函数时，将它们放在定义类本身的同一个文件中。当定义仅对特定客户端有意义的扩展函数时，将它们放在该客户端代码旁边。不要为了保存一个类的所有拓展而创建文件。
+
+#### 类布局
+
+总体上，一个类的内容按以下顺序排列：
+
+- 属性声明和初始化代码块
+- 构造函数
+- 方法声明
+- 伴随对象
+
+不要按字母顺序或可见性排列方法声明，也不要把普通方法和拓展方法分开。应该把相关的东西放在一起，让人从头到尾阅读代码时能理解逻辑。选择一个顺序（高层次居首，或者相反），并坚持它。
+
+把内部类放在使用它的代码旁边。如果打算在外部使用这些类，并且在类内部没有这些类的引用，将它们放在最后，就是伴随对象后面。
+
+#### 接口实现布局
+
+当实现一个接口时，实现类成员的顺序与接口成员顺序保持一致（如果必要，中间可以穿插用于实现方法的私有方法。
+
+#### 重载布局
+
+永远把重载放置在一起。
+
+### 命名规则
+
+Kotlin遵循Java的命名规约。特别是：
+
+包名总是小写，并且不要使用下划线。通常不鼓励使用多单词的名字，但是如果确实需要使用多单词，你可以简单地将它们连接在一起，或者使用驼峰法。
+
+类和对象的名称首字母大写，使用驼峰命名法:
+
+```kotlin
+open class DeclarationProcessor { ... }
+object EmptyDeclarationProcessor : DeclarationProcessor() { ... }
+```
+#### 函数名称
+函数、属性和局部变量首字母小写，使用驼峰命名法，不使用下划线
+```kotlin
+fun processDeclaration() { ... }
+var declarationCount = ...
+```
+例外：用于创建类的实例的工厂函数可以使用与所创建类名相同的名字
+```kotlin
+abstract class Foo { ... }
+class FooImpl : Foo { ... }
+fun Foo(): Foo { return FooImpl(...) }
+```
+
+##### 测试方法名称
+在测试中（仅在测试中），用单引号包围的带空白符的方法名是可接受的。（注意这种方法名目前不被Android运行时支持。）在测试中，方法名中使用下划线同样被允许。
+```kotlin
+class MyTestCase {
+    @Test fun `ensure everything works`() { ... }
+    @Test fun ensureEverythingWorks_onAndroid( { ... })
+}
+```
+#### 属性名
+常量（标记为`const`的属性，或者顶级声明，或者没有持有深度不可变的数据的自定`get`方法的`val`对象属性）应该使用下划线分隔的大写单词名称：
+```kotlin
+const val MAX_COUNT = 8
+val USER_NAME_FIELD = "UserName"
+```
+顶级声明、持有具备行为或可变数据的对象的对象属性，通常应该使用驼峰法命名：
+```kotlin
+val mutableCollection：MutableSet<String> = HashSet()
+```
+持有单例的引用的属性的名称可以使用`object`声明相同的命名风格：
+```kotlin
+val PersonComparator: Comparator<Person> = ... 
+```
+对于枚举常量，既可以使用下划线分隔的大写字母名称，也可以使用普通的首字母大写的驼峰命名法，依据使用场景而定。
+
+#### 支持属性的名称
+如果一个类包含两个概念上相同的属性，其中一个是公共API的一部分，另一个是实现的细节，在私有属性中使用下划线作为前缀：
+```kotlin
+class {
+    private val _elementList = mutableListOf<Element>()
+    
+    val elementList: List<Element>
+    	get() = _elementList
+}
+```
+### 选择好名称
+类名通常是一个名词或名词词组，解释这个类是什么：`List`, `PersonReader`.
+
+方法名通常是一个动词或动词词组，说明这个方法做了什么：`close`, `readPersons`. 这个名字也要表明这个方法是改变该对象还是返回一个新对象。比如，`sort`是就地排序一个集合，而`sorted`会返回一个排好序的集合副本。
+
+名称应该清楚表明实体的目的是什么，因此最好避免在名称中使用无意义的单词（`Manager`, `Wrapper` 等）
+
+在声明名称时使用首字母缩写时，2个字母组成的使用大写（`IOStream`）；多于两个字母的仅首字母大写（`XmlFormatter`, `HttpInputStream`）.
+
+## 格式化
+
+在多数情况下，Kotlin遵循Java的编码规约。
+
+使用4个空格符缩进。不要使用制表符。
+
+对于大括号，左大括号放在结构首行的行尾，右大括号单独一行并与结构首行左对齐。
+```kotlin
+if (elements != null) {
+    for (element in elements) {
+        // ...
+    }
+}
+```
+（注意: 在Kotlin中，分号是可选的，因此换行符是很重要的。语言设计采用Java样式的大括号，如果你尝试使用不同的格式化样式，可能会遇到不可预知的行为。
+
+### 水平空格
+二元操作符左右均有空格（`a + b`）。例外：不要在区间操作符左右放置空格符（`0..i`）
+
+不要在一元操作符左右放置空格（`a++`）
+
+在控制流关键字(`if`,`when`,`for`,`while`)和对应的开括号之间放置空格符
+
+在主构造函数声明、方法声明或方法调用中，不要在开头括号前加空格
+```kotlin
+class A(val x: Int)
+
+fun foo(x: Int) { ... }
+
+fun bar() {
+    foo(1)
+}
+```
+
+永远不要在`(`,`[`之前或`]`,`)`之后放置空格
+
+永远不要在`.`或`?.`左右放置空格：`foo.bar().filter { it > 2 }.joinToString()`, `foo?.bar()`
+
+在`//`后面放置空格: `// 这是一条注释`
+
+在用于指定类型参数的尖括号左右，不要放置空格：`class Map<K, V> { ... }
+
+不要在`::`左右放置空格：`Foo:class`, `String::length`
+
+当`?`用于标记一个可为null的类型时，不要在它前面放置空格：`String?`
+
+一般规则是，避免任何形式的水平对齐。将标识符重命名为具有不同长度的名称不应影响声明或任何用法的格式。
+
+### 冒号
+在下列情形下，`:`前面放置空格：
+- 当它用于分隔类型和父类时
+- 当委托给超类构造函数或同一类的不同构造函数时
+- 在`object`关键字后面时
+
+当`:`用于分离声明和它的类型时，不要在它前面放置空格
+
+总是在`:`后面放置空格：
+```kotlin
+abstract class Foo<out T : Any> : IFoo {
+    abstract fun foo(a: Int): T
+
+
+class FooImpl : Foo() {
+    constructor(x: String) : this(x) { ... }
+    
+    val x = object : IFoo { ... }
+}
+```
+
+### 类头部格式化
+只有少量主构造函数参数的类可以在一行中书写:
+```kotlin
+class Person(id: Int, name: String)
+```
+具有较长标题的类应该进行格式化，以便每个主构造函数参数都在一个单独的缩进行中。此外，右括号应该在新行上。如果我们使用继承，那么超类构造函数调用或实现接口列表应该与括号位于同一行
+```kotlin
+class Person(
+    id: Int,
+    name: String,
+    surname: String
+) : Human(id, name) { ... }
+```
+对于多个接口，首先应该定位超类构造函数调用，然后每个接口应该位于不同的行中：
+```kotlin
+class Person(
+    id: Int,
+    name: String,
+    surname: String
+) : Human(id, name),
+    KotlinMaker { ... }
+```
+对于具有较长的超类型列表的类，在冒号后面放一个换行符，并水平对齐所有超类型名称:
+```kotlin
+class MyFavouriteVeryLongClassHolder :
+    MyLongHolder<MyFavouriteVeryLongClass>(),
+    SomeOtherInterface,
+    AndAnotherOne {
+
+    fun foo() { ... }
+}
+```
+如果类标题很长，要清楚地将类标题和主体分开，可以在类标题后面放一个空行(如上例所示)，或者在单独的行上放一个大括号:
+```kotlin
+class MyFavouriteVeryLongClassHolder :
+    MyLongHolder<MyFavouriteVeryLongClass>(),
+    SomeOtherInterface,
+    AndAnotherOne 
+{
+    fun foo() { ... }
+}
+```
+对构造函数参数使用常规缩进(4个空格)。
+
+> 基本原理:这确保在主构造函数中声明的属性与在类主体中声明的属性具有相同的缩进。
+
+### 修饰符
+
+如果一个声明有多个修饰符，请按以下顺序排列:
+
+```kotlin
+public / protected / private / internal
+expect / actual
+final / open / abstract / sealed / const
+external
+override
+lateinit
+tailrec
+vararg
+suspend
+inner
+enum / annotation
+companion
+inline
+infix
+operator
+data
+```
+将所有注释放在修饰符前面:
+```kotlin
+@Named("Foo")
+private val foo: Foo
+```
+除非你开发库，否则省略多余的修饰词(例如`public`)。
+
+### 注解格式化
+注释通常放在单独的行上，在它们所注解的声明之前，并且有相同的缩进:
+```kotlin
+@Target(AnnotationTarget.PROPERTY)
+annotation class JsonExclude
+```
+没有参数的注释可以放在同一行:
+```kotlin
+@JsonExclude @JvmField
+var x: String
+```
+单个没有参数的注释可以与相应的声明放在同一行:
+```kotlin
+@Test fun foo() { ... }
+```
+
+### 文件注解
+文件注解放在文件注释(如果有的话)之后，在包语句之前，并且用空行与包分隔(强调它们针对的是文件而不是包)。
+```kotlin
+/** License, copyright and whatever */
+@file:JvmName("FooBar")
+
+package foo.bar
+```
+
+### 函数格式化
+如果函数签名不适用于一行，请使用以下语法:
+```kotlin
+fun longMethodName(
+    argument: ArgumentType = defaultValue,
+    argument2: AnotherArgumentType
+): ReturnType {
+    // body
+}
+```
+对函数参数使用常规缩进(4个空格)。
+
+> 基本原理:与构造函数参数的格式一致
+
+对于包含单个表达式的函数，最好使用表达式体。
+```kotlin
+fun foo(): Int {     // bad
+    return 1 
+}
+
+fun foo() = 1        // good
+```
+### 表达式体格式化
+
+如果函数的表达式体与声明不能放在同一行，请将`=`符号放在第一行。将表达式体缩进4个空格。
+```kotlin
+fun f(x: String) =
+    x.length
+```
+### 属性格式化
+对于非常简单的只读属性，考虑一行格式：
+```kotlin
+val isEmpty: Boolean get() = size == 0
+```
+对于更复杂的属性，通常将`get`和`set`关键字放在单独行：
+```kotlin
+val foo: String
+    get() { ... }
+```
+对于带有初始化器的属性，如果初始化器很长，在等号后面加一个换行符，并缩进四个空格:
+```kotlin
+private val defaultCharset: Charset? = 
+    EncodingRegistry.getInstance().getDefaultCharsetForPropertiesFiles(file)
+```
+
+### 格式化控制流语句
+
+如果`if`或`when`语句的条件是多行，始终在语句的主体周围使用花括号。将条件的每一行缩进4个相对于语句开始的空格。将条件的右括号和左花括号放在另一行:
+```kotlin
+if (!component.isSyncing &&
+    !hasAnyKotlinRuntimeInScope(module)
+) {
+    return createKotlinNotConfiguredPanel(module)
+}
+```
+>基本原理：条件和语句体的整齐对齐和清晰分离
+
+将`else`,`catch`,`finally`关键字以及do/while循环中的`while`关键字放在前导大括号的同一行：
+```kotlin
+if (condition) {
+    // body
+} else {
+    // else part
+}
+
+try {
+    // body
+} finally {
+    // cleanup
+}
+```
+在`when`语句中，如果分支不止一行，考虑用空行将它与相邻的case块分隔开来:
+```kotlin
+private fun parsePropertyValue(propName: String, token: Token) {
+    when (token) {
+        is Token.ValueToken ->
+            callback.visitValue(propName, token.value)
+
+        Token.LBRACE -> { // ...
+        }
+    }
+}
+```
+将短的分支放在与条件同行上，不带大括号。
+```kotlin
+when (foo) {
+    true -> bar() // good
+    false -> { baz() } // bad
+}
+```
+
+### 方法调用格式化    
